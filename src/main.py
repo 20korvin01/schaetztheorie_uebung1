@@ -2,6 +2,8 @@ import numpy as np
 import os
 import cv2
 import matplotlib.pyplot as plt
+from scipy.stats import gamma
+
 
 
 ############## ---- 1 ---- ##############
@@ -58,40 +60,50 @@ def choose_patch(image: np.ndarray, center: tuple, half_side: int) -> np.ndarray
     patch = mirrored_image[y-half_side:y+half_side+1, x-half_side:x+half_side+1]
     return patch
 
-if __name__ == "__main__":
-    # Loading filepaths
-    datapath = './data/'
-    fileExtension = '.tif'
-    filenames = [f for f in os.listdir(datapath) if f.endswith(fileExtension)]
-    filepaths = [datapath + filename for filename in filenames]    
-    
-    # Load an example image (grayscale)
-    image = cv2.imread(filepaths[0], cv2.IMREAD_GRAYSCALE)
-
-    # Define the center and half-side of the patch
-    center = (789, 512)  # Example center
-    half_side = 30       # Example half-side length
-
-    # Get the patch
-    patch = choose_patch(image, center, half_side)
-
-    # # Display the original image and the patch
-    # plt.subplot(1, 2, 1)
-    # plt.imshow(image, cmap='gray')
-    # plt.title('Original Image')
-    
-    # plt.subplot(1, 2, 2)
-    # plt.imshow(patch, cmap='gray')
-    # plt.title('Image Patch')
-    
-    # plt.show()
-
-
 
 ############### ---- 2 ---- ##############
 # Write a Python function that adds noise on the image patch
 # Input: Image patch, type of noise (Gaussian for optique, speckle for SAR), standard deviation
 # Output: Noisy patch
+
+def add_noise_optique(patch: np.ndarray, std_dev: float, mean: float) -> np.ndarray:
+    """
+    Add Gaussian noise to the optique image patch.
+
+    Parameters:
+    patch (np.ndarray): The input image patch.
+    std_dev (float): Standard deviation of the noise.
+    mean (float): Mean of the noise.
+
+    Returns:
+    np.ndarray: Noisy image patch.
+    """
+    # Generate Gaussian noise
+    noise = np.random.normal(mean, std_dev, patch.shape).astype(np.uint8)
+    # Add noise to the patch
+    noisy_patch = patch + noise
+    # Clip the values to be in the valid range [0, 255]
+    noisy_patch = np.clip(noisy_patch, 0, 255).astype(np.uint8)
+    return noisy_patch
+
+def add_noise_sar(patch: np.ndarray, std_dev: float) -> np.ndarray:
+    """
+    Add speckle noise to the SAR image patch.
+
+    Parameters:
+    patch (np.ndarray): The input image patch.
+    std_dev (float): Standard deviation of the noise.
+
+    Returns:
+    np.ndarray: Noisy image patch.
+    """
+    # Generate speckle noise
+    noise = np.random.gamma(2, 1, patch.shape) * std_dev
+    # Add speckle noise to the patch
+    noisy_patch = patch * noise
+    # Clip the values to be in the valid range [0, 255]
+    noisy_patch = np.clip(noisy_patch, 0, 255).astype(np.uint8)
+    return noisy_patch
 
 
 ############### ---- 3 ---- ##############
@@ -107,22 +119,28 @@ if __name__ == "__main__":
 # Input: Image patch
 # Output: Histogram (vector providing the gray value occurences from 0 to 255).
 # image patch as vector
-pixelList = patch.flatten(order='F')
 
-# count gray value occurences (all possible 256)
-# schleife über alle Pixel suche nach einem Wert
-# gesuchten wert um 1 erhöhen
-# repeat
-n_bins = 256
-bins = np.zeros(n_bins, dtype=int)
-targetValue = 0
-for i in range(n_bins):
-    bins[i] = len(pixelList[pixelList == targetValue])
-    targetValue += 1
+def histogram(patch: np.ndarray, n_bins: int) -> np.ndarray:
+    """
+    Compute the histogram of the image patch.
 
-plt.figure()
-plt.bar(np.arange(n_bins), bins, width=1, color='black', edgecolor='black')
-plt.show()
+    Parameters:
+    patch (np.ndarray): The input image patch.
+
+    Returns:
+    np.ndarray: Histogram of the image patch.
+    """
+    # Flatten the patch to a 1D array
+    pixelList = patch.flatten(order='F')
+    
+    # Count gray value occurrences
+    bins = np.zeros(n_bins, dtype=int)
+    
+    for i in range(n_bins):
+        bins[i] = len(pixelList[pixelList == i])
+    
+    return bins
+
 
 ############### ---- 5 ---- ##############
 # Write a Python function that compute the central moments of an histogram
@@ -140,3 +158,81 @@ plt.show()
 # Write a Python function that performs the 2-sample Kolmogorov-Smirnov test
 # Input: Cumulative histogram 1, Cumulative histogram 2, significance level
 # Output: Vector of differences D, Decision (0 or 1)
+
+
+
+
+if __name__ == "__main__":
+    # Loading filepaths
+    datapath = './data/'
+    fileExtension = '.tif'
+    filenames = [f for f in os.listdir(datapath) if f.endswith(fileExtension)]
+    filepaths = [datapath + filename for filename in filenames]    
+    
+    # Loading specific image
+    spec_img = 10
+    
+    # Load an example image (grayscale)
+    image = cv2.imread(filepaths[spec_img], cv2.IMREAD_GRAYSCALE)
+    
+    
+    ## TASK 1 ##
+    # Define the center and half-side of the patch
+    center = (789, 512)  # Example center
+    half_side = 30       # Example half-side length
+
+    # Get the patch
+    patch = choose_patch(image, center, half_side)
+
+    # # Display the original image and the patch
+    # plt.subplot(1, 2, 1)
+    # plt.imshow(image, cmap='gray')
+    # plt.title('Original Image')
+    
+    # plt.subplot(1, 2, 2)
+    # plt.imshow(patch, cmap='gray')
+    # plt.title('Image Patch')
+    
+    # plt.show()
+    
+    
+    ## TASK 2 ##
+    if "optik" in filenames[spec_img]:
+        # Add Gaussian noise to the patch
+        noisy_patch = add_noise_optique(patch, std_dev=10, mean=0)
+        print(filenames[spec_img])
+    elif "SAR" in filenames[spec_img]:
+        # Add speckle noise to the patch
+        noisy_patch = add_noise_sar(patch, std_dev=0.1)
+        print(filenames[spec_img])
+        
+    # plot the noisy patch
+    plt.subplot(1, 2, 1)
+    plt.imshow(patch, cmap='gray')
+    plt.title('Original Patch')
+    
+    plt.subplot(1, 2, 2)
+    plt.imshow(noisy_patch, cmap='gray')
+    plt.title('Noisy Patch')
+    
+    plt.show()
+        
+    
+    
+    ## TASK 3 ##
+    
+    ## TASK 4 ##
+    # Compute the histogram of the patch
+    n_bins = 256
+    hist = histogram(patch, n_bins)
+    
+    # # Plot the histogram
+    # plt.figure()
+    # plt.bar(np.arange(n_bins), hist, width=1, color='black', edgecolor='black')
+    # plt.show()
+    
+    ## TASK 5 ##
+    
+    ## TASK 6 ##
+    
+    ## TASK 7 ##
