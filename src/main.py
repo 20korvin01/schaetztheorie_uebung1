@@ -69,8 +69,8 @@ if __name__ == "__main__":
     image = cv2.imread(filepaths[0], cv2.IMREAD_GRAYSCALE)
 
     # Define the center and half-side of the patch
-    center = (512, 512)  # Example center
-    half_side = 1024       # Example half-side length
+    center = (789, 512)  # Example center
+    half_side = 30       # Example half-side length
 
     # Get the patch
     patch = choose_patch(image, center, half_side)
@@ -113,15 +113,15 @@ pixelList = patch.flatten(order='F')
 # schleife über alle Pixel suche nach einem Wert
 # gesuchten wert um 1 erhöhen
 # repeat
-
-bins = np.zeros(256)
+n_bins = 256
+bins = np.zeros(n_bins, dtype=int)
 targetValue = 0
-for i in range(256):
+for i in range(n_bins):
     bins[i] = len(pixelList[pixelList == targetValue])
     targetValue += 1
 
 plt.figure()
-plt.plot(bins)
+plt.bar(np.arange(n_bins), bins, width=1, color='black', edgecolor='black')
 plt.show()
 
 ############### ---- 5 ---- ##############
