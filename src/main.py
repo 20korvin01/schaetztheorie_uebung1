@@ -22,7 +22,23 @@
 # Write a Matlab/Python function to compute the histogram of the image
 # Input: Image patch
 # Output: Histogram (vector providing the gray value occurences from 0 to 255).
+# image patch as vector
+pixelList = patch.flatten(order='F')
 
+# count gray value occurences (all possible 256)
+# schleife über alle Pixel suche nach einem Wert
+# gesuchten wert um 1 erhöhen
+# repeat
+
+bins = np.zeros(256)
+targetValue = 0
+for i in range(256):
+    bins[i] = len(pixelList[pixelList == targetValue])
+    targetValue += 1
+
+plt.figure()
+plt.plot(bins)
+plt.show()
 
 ############### ---- 5 ---- ##############
 # Write a Matlab/Python function that compute the central moments of an histogram
