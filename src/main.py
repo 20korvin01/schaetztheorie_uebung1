@@ -113,6 +113,32 @@ def add_noise_sar(patch: np.ndarray, std_dev: float) -> np.ndarray:
 # Please take a special care with the border of the image patch (propose an extrapolation method)
 # Compare your filter with Python implemented function
 
+##### sehr WIP und noch nicht sinnvoll
+# seperat, da die Funktion erst auf alle Zeilen, dann auf alle Spalten angewendet wird
+def gauss_filter(patch_row, filter_std):
+     gauss = np.exp(-(patch_row**2)/(2*filter_std**2)) /(filter_std*np.sqrt(2*np.pi()))
+
+def img_filter(patch: np.ndarray, filter_size: int, filter_std: float) -> np.ndarray:
+    """
+    Filter the image (patch).
+
+    Parameters: 
+    patch (np.ndarray): The input image patch.
+    filter_size (int): size of the row filter in pixels.
+    filter_std (float): standard deviation of the filter.
+
+    Returns:
+    np.ndarray: Filtered image patch. 
+    """
+# da std übergeben wird, kommen Boxfilter wie der Mittelwertfilter nicht in Frage -> Binomialfilter oder Gaußfilter
+# Patch nur um die halbe Filterbreite erweitern -> entweder aus Originalbild abgreifen oder den Patch spiegeln
+# Bsp: Filtergröße 5 -> startet am linken Rand
+#      Es fehlen links außerhalb des Patches 2 Pixel [=floor(filter_size/2) Pixel]
+#      2D Gaußfilter in Zeilen/Spalten seperierbar -> erst in Zeilen, dann das Zwischenergebnis nach Spalten filtern 
+#                                                  => gesamtgefilteres Bild = Ergebnis
+
+    filtered_patch = patch
+    return filtered_patch
 
 ############### ---- 4 ---- ##############
 # Write a Python function to compute the histogram of the image
@@ -126,6 +152,7 @@ def histogram(patch: np.ndarray, n_bins: int) -> np.ndarray:
 
     Parameters:
     patch (np.ndarray): The input image patch.
+    n_bins (int): Number of bins.
 
     Returns:
     np.ndarray: Histogram of the image patch.
