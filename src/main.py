@@ -175,6 +175,31 @@ def histogram(patch: np.ndarray, n_bins: int) -> np.ndarray:
 # Output: Mean, variance, standard deviation, skewness, curtosis, excess
 
 
+def central_moments(hist):
+    # Wahrscheinlichkeitsverteilung
+    p = hist / np.sum(hist)
+
+    # mean
+    mue = np.sum(np.arange(len(hist)) * p)
+
+    # variance
+    var = np.sum((np.arange(len(hist)) - mue)**2 * p)
+
+    # standard deviation
+    sigma = np.sqrt(var)
+
+    # skewness
+    gamma_1 = (1 / (sigma**3)) * np.sum((np.arange(len(hist)) - mue)**3 * p)
+
+    # curtosis
+    cur = (1 / (sigma**4)) * np.sum((np.arange(len(hist)) - mue)**4 * p)
+
+    # excess
+    gamma_2 = cur - 3
+
+    return mue, var, sigma, gamma_1, cur, gamma_2
+
+
 ############### ---- 6 ---- ##############
 # Write a Python function that calculate the normalized and cumulative histogram
 # Input: Histogram
@@ -216,7 +241,28 @@ def normalized_and_cumulative_histogram(hist: np.ndarray) -> (np.ndarray, np.nda
 # Output: Vector of differences D, Decision (0 or 1)
 
 
+def ks_test(cumulative_hist1, cumulative_hist2, alpha):
+    # vector of differences
+    D = np.abs(cumulative_hist1 - cumulative_hist2)
 
+    # maximum difference
+    D_max = np.max(D)
+
+    # value KS-test
+    n = len(cumulative_hist1)
+    m = len(cumulative_hist2)
+    c = 1.628 # alpha = 0.01
+    temp = c * np.sqrt((n + m) / (n * m))
+
+    # decision
+    decision = 1 if D_max > temp else 0
+
+    return D, decision
+
+
+
+
+# Test
 
 if __name__ == "__main__":
     # Loading filepaths
@@ -288,6 +334,7 @@ if __name__ == "__main__":
     # plt.show()
     
     ## TASK 5 ##
+    central_moments_hist = central_moments(hist)
     
     ## TASK 6 ##
     hist_norm_kum = normalized_and_cumulative_histogram(hist)
