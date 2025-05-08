@@ -199,6 +199,40 @@ def central_moments(hist):
 
     return mue, var, sigma, gamma_1, cur, gamma_2
 
+def plot_histogram_with_moments(hist, moments, n_bins=256):
+    """
+    Plottet das Histogramm, markiert Mittelwert und Standardabweichung und zeigt die zentralen Momente als Text an.
+    """
+    x = np.arange(n_bins)
+    mean, var, std, skew, kurt, excess = moments
+
+    plt.figure(figsize=(10,5))
+    plt.bar(x, hist, width=1, color='gray', alpha=0.7, label='Histogramm')
+
+    # Vertikale Linien für Mittelwert und Standardabweichung
+    plt.axvline(mean, color='red', linestyle='--', linewidth=2, label='Mittelwert')
+    plt.axvline(mean + std, color='blue', linestyle=':', linewidth=2, label='Mittelwert ± Std')
+    plt.axvline(mean - std, color='blue', linestyle=':', linewidth=2)
+
+    # Textbox mit Momenten
+    textstr = '\n'.join((
+        r'$\mathrm{Mittelwert}=%.2f$' % (mean, ),
+        r'$\mathrm{Varianz}=%.2f$' % (var, ),
+        r'$\mathrm{Std}=%.2f$' % (std, ),
+        r'$\mathrm{Schiefe}=%.2f$' % (skew, ),
+        r'$\mathrm{Kurtosis}=%.2f$' % (kurt, ),
+        r'$\mathrm{Exzess}=%.2f$' % (excess, )))
+    props = dict(boxstyle='round', facecolor='white', alpha=0.8)
+    plt.text(0.98, 0.98, textstr, transform=plt.gca().transAxes, fontsize=11,
+             verticalalignment='top', horizontalalignment='right', bbox=props)
+
+    plt.title('Histogramm mit zentralen Momenten und Mittelwert/Std')
+    plt.xlabel('Grauwert')
+    plt.ylabel('Anzahl')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
 
 ############### ---- 6 ---- ##############
 # Write a Python function that calculate the normalized and cumulative histogram
@@ -287,15 +321,15 @@ if __name__ == "__main__":
     patch = choose_patch(image, center, half_side)
 
     # # Display the original image and the patch
-    # plt.subplot(1, 2, 1)
-    # plt.imshow(image, cmap='gray')
-    # plt.title('Original Image')
+    plt.subplot(1, 2, 1)
+    plt.imshow(image, cmap='gray')
+    plt.title('Original Image')
     
-    # plt.subplot(1, 2, 2)
-    # plt.imshow(patch, cmap='gray')
-    # plt.title('Image Patch')
+    plt.subplot(1, 2, 2)
+    plt.imshow(patch, cmap='gray')
+    plt.title('Image Patch')
     
-    # plt.show()
+    plt.show()
     
     
     ## TASK 2 ##
@@ -329,12 +363,13 @@ if __name__ == "__main__":
     hist = histogram(patch, n_bins)
     
     # # Plot the histogram
-    # plt.figure()
-    # plt.bar(np.arange(n_bins), hist, width=1, color='black', edgecolor='black')
-    # plt.show()
+    plt.figure()
+    plt.bar(np.arange(n_bins), hist, width=1, color='black', edgecolor='black')
+    plt.show()
     
     ## TASK 5 ##
     central_moments_hist = central_moments(hist)
+    plot_histogram_with_moments(hist, central_moments_hist, n_bins)
     
     ## TASK 6 ##
     hist_norm_kum = normalized_and_cumulative_histogram(hist)
@@ -385,3 +420,49 @@ if __name__ == "__main__":
     plt.show()
     
     ## TASK 7 ##
+    # 2 Varianten die geteste werden sollen: 
+    #    1)Zwei Bildpatches vergleichen
+    #    2) Patch vs. Gaußverteilung(Normalverteilung) vergleichen
+
+    # Variante 1
+    # zweites Bildpatch erstellen
+    #center2 = (789, 562)  # z.B. 50 Pixel weiter rechts: Decision = 0
+    center2 = (150, 176) # weit genug verschoben für Decision = 1
+    half_side = 30
+    patch2 = choose_patch(image, center2, half_side)
+
+    #Histogramm für Bildpatch 2
+    hist2 = histogram(patch2, n_bins)
+    _, cum_hist2 = normalized_and_cumulative_histogram(hist2)
+
+    # Testaufruf für beide Bildpatches
+    D, decision = ks_test(cum_hist, cum_hist2, alpha=0.05)
+    print("KS-Test Patch vs. Patch: D_max =", np.max(D), "Entscheidung:", decision)
+
+    #Visualisierung
+    plt.plot(cum_hist, label='Patch 1')
+    plt.plot(cum_hist2, label='Patch 2')
+    plt.legend()
+    plt.title('Kumulierte Histogramme der Patches')
+    plt.show()
+
+    # Variante 2
+    # Gaußverteilung erzeugen
+    mean = np.mean(patch)
+    std = np.std(patch)
+    x = np.arange(n_bins)
+    gauss_pdf = (1/(std * np.sqrt(2 * np.pi))) * np.exp(-((x - mean)**2) / (2 * std**2))
+
+    # Normierung und Kumulierung durch eigene Funktion
+    _, gauss_cum = normalized_and_cumulative_histogram(gauss_pdf)
+
+    # Funktionsaufruf
+    D_gauss, decision_gauss = ks_test(cum_hist, gauss_cum, alpha=0.05)
+    print("KS-Test Patch vs. Gauß: D_max =", np.max(D_gauss), "Entscheidung:", decision_gauss)
+
+    # Visualisierung
+    plt.plot(cum_hist, label='Patch')
+    plt.plot(gauss_cum, label='Gauß')
+    plt.legend()
+    plt.title('Kumuliertes Histogramm vs. Gauß')
+    plt.show()
