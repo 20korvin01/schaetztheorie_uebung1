@@ -115,8 +115,9 @@ def add_noise_sar(patch: np.ndarray, std_dev: float) -> np.ndarray:
 
 ##### sehr WIP und noch nicht sinnvoll
 # seperat, da die Funktion erst auf alle Zeilen, dann auf alle Spalten angewendet wird
-def gauss_filter(patch_row, filter_std):
-     gauss = np.exp(-(patch_row**2)/(2*filter_std**2)) /(filter_std*np.sqrt(2*np.pi()))
+def gauss_filter(x, filter_std):
+     gauss = np.exp(-(x**2)/(2*filter_std**2)) /(filter_std*np.sqrt(2*np.pi))
+     return gauss
 
 def img_filter(patch: np.ndarray, filter_size: int, filter_std: float) -> np.ndarray:
     """
@@ -136,8 +137,25 @@ def img_filter(patch: np.ndarray, filter_size: int, filter_std: float) -> np.nda
 #      Es fehlen links außerhalb des Patches 2 Pixel [=floor(filter_size/2) Pixel]
 #      2D Gaußfilter in Zeilen/Spalten seperierbar -> erst in Zeilen, dann das Zwischenergebnis nach Spalten filtern 
 #                                                  => gesamtgefilteres Bild = Ergebnis
+    patch_bounds = patch.shape[:2]
+    extended_patch = mirror_image(patch)
+    half_filter_size = filter_size//2
+    x = np.arange(-half_filter_size+1,half_filter_size+1,1)
+    gauss_kernel = gauss_filter(x, filter_std)
+    # in einer Schleife muss an jeder Stelle des Patches der Filter zwei mal angesetzt werden
+    
+    filtered_patch = np.zeros(patch_bounds)
+    for row in range(patch_bounds[0]):
+        for column in range(patch_bounds[1]):
+            new_value = gauss_kernel @ extended_patch[patch_bounds[0]+row, patch_bounds[1]+column-half_filter_size:patch_bounds[1]+column+half_filter_size]
+            print(f"new_value: {new_value}")
+            filtered_patch[row, column] = 0
 
-    filtered_patch = patch
+        # pxl are rows
+        # run over all positions in the patch, but use the values of the extended patch
+        print('.')
+
+    filtered_patch = row_filtered_patch
     return filtered_patch
 
 ############### ---- 4 ---- ##############
@@ -321,15 +339,15 @@ if __name__ == "__main__":
     patch = choose_patch(image, center, half_side)
 
     # # Display the original image and the patch
-    plt.subplot(1, 2, 1)
-    plt.imshow(image, cmap='gray')
-    plt.title('Original Image')
+    # plt.subplot(1, 2, 1)
+    # plt.imshow(image, cmap='gray')
+    # plt.title('Original Image')
     
-    plt.subplot(1, 2, 2)
-    plt.imshow(patch, cmap='gray')
-    plt.title('Image Patch')
+    # plt.subplot(1, 2, 2)
+    # plt.imshow(patch, cmap='gray')
+    # plt.title('Image Patch')
     
-    plt.show()
+    # plt.show()
     
     
     ## TASK 2 ##
@@ -343,19 +361,20 @@ if __name__ == "__main__":
         print(filenames[spec_img])
         
     # plot the noisy patch
-    plt.subplot(1, 2, 1)
-    plt.imshow(patch, cmap='gray')
-    plt.title('Original Patch')
+    # plt.subplot(1, 2, 1)
+    # plt.imshow(patch, cmap='gray')
+    # plt.title('Original Patch')
     
-    plt.subplot(1, 2, 2)
-    plt.imshow(noisy_patch, cmap='gray')
-    plt.title('Noisy Patch')
+    # plt.subplot(1, 2, 2)
+    # plt.imshow(noisy_patch, cmap='gray')
+    # plt.title('Noisy Patch')
     
-    plt.show()
+    # plt.show()
         
     
     
     ## TASK 3 ##
+    filtered_patch = img_filter(noisy_patch,5,0.5)
     
     ## TASK 4 ##
     # Compute the histogram of the patch
