@@ -11,7 +11,7 @@ from scipy.stats import gamma
 # Input: Image, Patch center, Half-side of the patch
 # Output: Image patch
 
-def mirror_image(image: np.ndarray) -> np.ndarray:
+def mirror_image(image):
     """
     Mirror the image at the borders to extrapolate the patch.
 
@@ -36,7 +36,7 @@ def mirror_image(image: np.ndarray) -> np.ndarray:
     
     return mirrored_image
 
-def choose_patch(image: np.ndarray, center: tuple, half_side: int) -> np.ndarray:
+def choose_patch(image, center, half_side):
     """
     Choose a patch from the image.
 
@@ -66,7 +66,7 @@ def choose_patch(image: np.ndarray, center: tuple, half_side: int) -> np.ndarray
 # Input: Image patch, type of noise (Gaussian for optique, speckle for SAR), standard deviation
 # Output: Noisy patch
 
-def add_noise_optique(patch: np.ndarray, std_dev: float, mean: float) -> np.ndarray:
+def add_noise_optique(patch, std_dev, mean):
     """
     Add Gaussian noise to the optique image patch.
 
@@ -86,19 +86,21 @@ def add_noise_optique(patch: np.ndarray, std_dev: float, mean: float) -> np.ndar
     noisy_patch = np.clip(noisy_patch, 0, 255).astype(np.uint8)
     return noisy_patch
 
-def add_noise_sar(patch: np.ndarray, std_dev: float) -> np.ndarray:
+def add_noise_sar(patch, std_dev, a, b):
     """
     Add speckle noise to the SAR image patch.
 
     Parameters:
     patch (np.ndarray): The input image patch.
     std_dev (float): Standard deviation of the noise.
+    a (float): Shape parameter of the gamma distribution.
+    b (float): Scale parameter of the gamma distribution.
 
     Returns:
     np.ndarray: Noisy image patch.
     """
     # Generate speckle noise
-    noise = np.random.gamma(2, 1, patch.shape) * std_dev
+    noise = std_dev * np.random.gamma(a, b, patch.shape)
     # Add speckle noise to the patch
     noisy_patch = patch * noise
     # Clip the values to be in the valid range [0, 255]
@@ -118,7 +120,7 @@ def gauss_filter(x, filter_std):
      gauss = np.exp(-(x**2)/(2*filter_std**2)) /(filter_std*np.sqrt(2*np.pi))
      return gauss
 
-def img_filter(patch: np.ndarray, filter_size: int, filter_std: float) -> np.ndarray:
+def img_filter(patch, filter_size, filter_std):
     """
     Filter the image (patch).
 
@@ -137,6 +139,7 @@ def img_filter(patch: np.ndarray, filter_size: int, filter_std: float) -> np.nda
     extended_patch = mirror_image(patch)
     
     half_filter_size = filter_size//2
+    x = np.arange(-half_filter_size,half_filter_size+1,1)
     x = np.arange(-half_filter_size,half_filter_size+1,1)
     gauss_kernel = gauss_filter(x, filter_std)
 
@@ -206,7 +209,7 @@ def img_filter(patch: np.ndarray, filter_size: int, filter_std: float) -> np.nda
 # Output: Histogram (vector providing the gray value occurences from 0 to 255).
 # image patch as vector
 
-def histogram(patch: np.ndarray, n_bins: int) -> np.ndarray:
+def histogram(patch, n_bins):
     """
     Compute the histogram of the image patch.
 
@@ -298,7 +301,7 @@ def plot_histogram_with_moments(hist, moments, n_bins=256):
 # Write a Python function that calculate the normalized and cumulative histogram
 # Input: Histogram
 # Output: Two vectors for respectively the normalized and cumulative histogram
-def normalized_and_cumulative_histogram(hist: np.ndarray) -> (np.ndarray, np.ndarray):
+def normalized_and_cumulative_histogram(hist):
     """
     Compute the normalized and cumulative histogram.
 
@@ -366,7 +369,7 @@ if __name__ == "__main__":
     filepaths = [datapath + filename for filename in filenames]    
     
     # Loading specific image
-    spec_img = 10
+    spec_img = 0
     
     # Load an example image (grayscale)
     image = cv2.imread(filepaths[spec_img], cv2.IMREAD_GRAYSCALE)
@@ -379,6 +382,7 @@ if __name__ == "__main__":
 
     # Get the patch
     patch = choose_patch(image, center, half_side)
+    
 
     # # Display the original image and the patch
     # plt.subplot(1, 2, 1)
@@ -399,7 +403,9 @@ if __name__ == "__main__":
         print(filenames[spec_img])
     elif "SAR" in filenames[spec_img]:
         # Add speckle noise to the patch
-        noisy_patch = add_noise_sar(patch, std_dev=0.1)
+        a = 1/4
+        b = 4
+        noisy_patch = add_noise_sar(patch, std_dev=0.1, a=a, b=b)
         print(filenames[spec_img])
         
     # plot the noisy patch
@@ -414,6 +420,8 @@ if __name__ == "__main__":
     # plt.show()
         
     
+    # save patch to txt
+    np.savetxt('noisy_patch.txt', noisy_patch, fmt='%d')
     
     ## TASK 3 ##
     filtered_patch = img_filter(noisy_patch,5,1)
