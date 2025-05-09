@@ -186,7 +186,8 @@ def img_filter(patch, filter_size, filter_std):
     # revert the transpose 
     filtered_patch = filtered_patch_transposed.T
 
-    fig, axs = plt.subplots(2, 2, figsize=(8, 8))
+    # fig, axs = plt.subplots(2, 2, figsize=(15, 4))
+    fig, axs = plt.subplots(1, 4, figsize=(15, 4))
     # Visual debugging
     axs[0].imshow(filtered_patch)
     axs[0].set_title('filtered Patch')
@@ -418,10 +419,6 @@ if __name__ == "__main__":
     # plt.title('Noisy Patch')
     
     # plt.show()
-        
-    
-    # save patch to txt
-    np.savetxt('noisy_patch.txt', noisy_patch, fmt='%d')
     
     ## TASK 3 ##
     filtered_patch = img_filter(noisy_patch,5,1)
