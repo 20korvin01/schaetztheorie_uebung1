@@ -115,6 +115,16 @@ def add_noise_sar(patch: np.ndarray, std_dev: float) -> np.ndarray:
 
 # seperat, da die Funktion erst auf alle Zeilen, dann auf alle Spalten angewendet wird
 def gauss_filter(x, filter_std):
+     """
+     Applies gaussian filter with given sigma to a row vector
+
+     Parameters: 
+     x (np.ndarray): row vector which is to be filtered
+     filter_std (float): sigma of the gaussian
+
+     Returns:
+     Filtered row vector 
+     """
      gauss = np.exp(-(x**2)/(2*filter_std**2)) /(filter_std*np.sqrt(2*np.pi))
      return gauss
 
@@ -159,45 +169,16 @@ def img_filter(patch: np.ndarray, filter_size: int, filter_std: float) -> np.nda
     row_filtered_transposed = row_filtered_patch.T
     row_filtered_transposed_extended = mirror_image(row_filtered_transposed)
     
-    fig, axs = plt.subplots(1, 3, figsize=(15, 4))
-    # Visual debugging
-    axs[0].imshow(row_filtered_patch)
-    axs[0].set_title('row_filtered Patch')
-    axs[1].imshow(row_filtered_transposed)
-    axs[1].set_title('row_filtered_transposed Patch')
-    axs[2].imshow(patch)
-    axs[2].set_title('originaler Patch')
-    plt.tight_layout()
-    plt.show()
-
-##### Bis hier klappt alles
-
     rowcount = 0
     for row in patch:
         for pxl_idx in range(len(row)):
-            # patch_bounds[0]+pxl_idx-half_filter_size = jump to the center image, jump to the current column, go left by half the filter size
-            # patch_bounds[0]+pxl_idx+half_filter_size+1 = jump to the center image, jump to the current column, go right by half the filtersize, offset by 1 to account for the center pixel
             filtered_patch_transposed[patch_bounds[1]-rowcount-1, pxl_idx] = gauss_kernel.dot(row_filtered_transposed_extended[rowcount, patch_bounds[0]+pxl_idx-half_filter_size:patch_bounds[0]+pxl_idx+half_filter_size+1])
         rowcount += 1 
         
     # revert the transpose 
     filtered_patch = filtered_patch_transposed.T
-
-    fig, axs = plt.subplots(2, 2, figsize=(8, 8))
-    # Visual debugging
-    axs[0].imshow(filtered_patch)
-    axs[0].set_title('filtered Patch')
-    axs[1].imshow(row_filtered_patch)
-    axs[1].set_title('row_filtered Patch')
-    axs[2].imshow(filtered_patch_transposed)
-    axs[2].set_title('filtered transposed Patch')
-    axs[3].imshow(patch)
-    axs[3].set_title('originaler Patch')
-    plt.tight_layout()
-    plt.show()
-
     # only return the "inner" patch / original patch size
-    return filtered_patch[patch_bounds[0]:2*patch_bounds[0],patch_bounds[1]:2*patch_bounds[1]]
+    return filtered_patch
     
 
 ############### ---- 4 ---- ##############
@@ -416,7 +397,7 @@ if __name__ == "__main__":
     
     
     ## TASK 3 ##
-    filtered_patch = img_filter(noisy_patch,5,1)
+    filtered_patch = img_filter(noisy_patch,5,0.8)
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))
     # verrauscht
     axs[0].imshow(noisy_patch)
