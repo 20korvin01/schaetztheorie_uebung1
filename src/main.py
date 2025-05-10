@@ -182,18 +182,16 @@ def img_filter(patch, filter_size, filter_std):
     filtered_patch = filtered_patch_transposed.T
 
     # fig, axs = plt.subplots(2, 2, figsize=(15, 4))
-    fig, axs = plt.subplots(1, 4, figsize=(15, 4))
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4))
     # Visual debugging
-    axs[0].imshow(filtered_patch)
-    axs[0].set_title('filtered Patch')
+    axs[0].imshow(patch)
+    axs[0].set_title('verrauschter Patch')
     axs[1].imshow(row_filtered_patch)
-    axs[1].set_title('row_filtered Patch')
-    axs[2].imshow(filtered_patch_transposed)
-    axs[2].set_title('filtered transposed Patch')
-    axs[3].imshow(patch)
-    axs[3].set_title('originaler Patch')
+    axs[1].set_title('Zeilenrichtung gefiltered')
+    axs[2].imshow(filtered_patch)
+    axs[2].set_title('gesamtgefilterter Patch')
     plt.tight_layout()
-    plt.show()
+    plt.savefig('./plots/Task3_verarbeitung.png')
 
     # only return the "inner" patch / original patch size
     return filtered_patch
@@ -418,17 +416,17 @@ if __name__ == "__main__":
     ## TASK 3 ##
     filtered_patch = img_filter(noisy_patch,5,0.8)
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))
-    # verrauscht
-    axs[0].imshow(noisy_patch)
-    axs[0].set_title('verrauschter Patch')
-    # gefiltered / Ergebnis dieser Aufgabe
-    axs[1].imshow(filtered_patch)
-    axs[1].set_title('gefilterter Patch')
     # original
-    axs[2].imshow(patch)
-    axs[2].set_title('originaler Patch')
+    axs[0].imshow(patch)
+    axs[0].set_title('originaler Patch')
+    # verrauscht
+    axs[1].imshow(noisy_patch)
+    axs[1].set_title('verrauschter Patch')
+    # gefiltered / Ergebnis dieser Aufgabe
+    axs[2].imshow(filtered_patch)
+    axs[2].set_title('gefilterter Patch')
     plt.tight_layout()
-    plt.show()
+    plt.savefig('./plots/Task3_ergebnis.png')
 
     
     ## TASK 4 ##
@@ -439,7 +437,7 @@ if __name__ == "__main__":
     # # Plot the histogram
     plt.figure()
     plt.bar(np.arange(n_bins), hist, width=1, color='black', edgecolor='black')
-    plt.show()
+    plt.savefig('./plots/Task4.png')
     
     ## TASK 5 ##
     central_moments_hist = central_moments(hist)
