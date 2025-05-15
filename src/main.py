@@ -14,12 +14,6 @@ from scipy.stats import gamma
 def mirror_image(image):
     """
     Mirror the image at the borders to extrapolate the patch.
-
-    Parameters:
-    image (np.ndarray): The input image.
-
-    Returns:
-    np.ndarray: Original image with mirrored copies around the borders.
     """
     # Flipping the image
     flip_ud = cv2.flip(image, 0)    # vertical flip
@@ -116,16 +110,12 @@ def add_noise_sar(patch, std_dev, a, b):
 # Compare your filter with Python implemented function
 
 # seperat, da die Funktion erst auf alle Zeilen, dann auf alle Spalten angewendet wird
+
+
+
 def gauss_filter(x, filter_std):
      """
      Applies gaussian filter with given sigma to a row vector
-
-     Parameters: 
-     x (np.ndarray): row vector which is to be filtered
-     filter_std (float): sigma of the gaussian
-
-     Returns:
-     Filtered row vector 
      """
      gauss = np.exp(-(x**2)/(2*filter_std**2)) /(filter_std*np.sqrt(2*np.pi))
      return gauss
@@ -133,18 +123,8 @@ def gauss_filter(x, filter_std):
 def img_filter(patch, filter_size, filter_std):
     """
     Filter the image (patch).
-
-    Parameters: 
-    patch (np.ndarray): The input image patch.
-    filter_size (int): size of the row filter in pixels.
-    filter_std (float): standard deviation of the filter.
-
-    Returns:
-    np.ndarray: Filtered image patch. 
     """
-# da std übergeben wird, kommen Boxfilter wie der Mittelwertfilter nicht in Frage -> Binomialfilter oder Gaußfilter
-# 2D Gaußfilter in Zeilen/Spalten seperierbar -> erst in Zeilen, dann das Zwischenergebnis nach Spalten filtern 
-#                                             => gesamtgefilteres Bild = Ergebnis
+    
     patch_bounds = patch.shape[:2]
     extended_patch = mirror_image(patch)
     
@@ -160,26 +140,33 @@ def img_filter(patch, filter_size, filter_std):
     rowcount = 0
     for row in patch:
         for pxl_idx in range(len(row)):
-            # patch_bounds[1]+pxl_idx-half_filter_size = jump to the center image, jump to the current column, go left by half the filter size
-            # patch_bounds[1]+pxl_idx+half_filter_size+1 = jump to the center image, jump to the current column, go right by half the filtersize, offset by 1 to account for the center pixel
-            row_filtered_patch[patch_bounds[0]-rowcount-1, pxl_idx] = gauss_kernel.dot(extended_patch[rowcount, patch_bounds[1]+pxl_idx-half_filter_size:patch_bounds[1]+pxl_idx+half_filter_size+1])
-                                #^^^^^^^^^^^^^^^^^^^^^^^^
-                                # nicht ganz klar warum die Zeilen in der falschen Reiehnfolge durchgegangen werden. 
-                                # So kommt aber wieder die gleiche Orientierung wie im Original raus
+            row_filtered_patch[patch_bounds[0]-rowcount-1, pxl_idx] = gauss_kernel.dot(
+                extended_patch[
+                    rowcount,
+                    patch_bounds[1]+pxl_idx-half_filter_size:patch_bounds[1]+pxl_idx+half_filter_size+1
+                ]
+            )
         rowcount += 1 
             
-    # transpose the row-filtered image so we can use the same logic for column filtering (turing columns into rows)
+    # transpose the row-filtered image so we can use the same logic for column filtering (turning columns into rows)
     row_filtered_transposed = row_filtered_patch.T
     row_filtered_transposed_extended = mirror_image(row_filtered_transposed)
     
     rowcount = 0
     for row in patch:
         for pxl_idx in range(len(row)):
-            filtered_patch_transposed[patch_bounds[1]-rowcount-1, pxl_idx] = gauss_kernel.dot(row_filtered_transposed_extended[rowcount, patch_bounds[0]+pxl_idx-half_filter_size:patch_bounds[0]+pxl_idx+half_filter_size+1])
+            filtered_patch_transposed[patch_bounds[1]-rowcount-1, pxl_idx] = gauss_kernel.dot(
+                row_filtered_transposed_extended[
+                    rowcount,
+                    patch_bounds[0]+pxl_idx-half_filter_size:patch_bounds[0]+pxl_idx+half_filter_size+1
+                    ]
+            )
         rowcount += 1 
         
     # revert the transpose 
     filtered_patch = filtered_patch_transposed.T
+    
+    return filtered_patch
 
     # fig, axs = plt.subplots(2, 2, figsize=(15, 4))
     fig, axs = plt.subplots(1, 3, figsize=(15, 4))
@@ -351,9 +338,7 @@ def ks_test(cumulative_hist1, cumulative_hist2, alpha):
     return D, decision
 
 
-
-
-# Test
+######################################## - MAIN - ########################################
 
 if __name__ == "__main__":
     # Loading filepaths
